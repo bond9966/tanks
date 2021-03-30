@@ -121,7 +121,7 @@ start1:
 		
 		call	life_count	;wypisuje ile mi zyc zostalo
 		
-		call	print_buf_x100	;kopiuje buf na ekran
+		call	print_buf	;kopiuje buf na ekran
 		
 		call	if_win		;sprawdza stan gry (al=0 gra sie toczy, al=1 koniec gry[ah=1 wygrana, ah=2 przegrana])
 		cmp	al, 1
@@ -439,9 +439,13 @@ print_shots:	;###rysuje strzaly i dodaje wektory przesuniecia
 	
 	print_shots_0:
 	cmp	cx, bx
-	jz	print_shots_end
+	jnz	print_shots_4
+	jmp	print_shots_end
+	print_shots_4:
 	cmp	cx, bx
-	js	print_shots_end
+	jns	print_shots_5
+	jmp	print_shots_end
+	print_shots_5:
 	
 		push	cx
 		push	bx
@@ -694,22 +698,6 @@ new_shot:	;###tworzy nowy strzal #bx-offset do struk###
 new_shot_x	dw	0	;poz x nowego strzalu
 new_shot_y	db	0	;poz y
 new_shot_v	db	0	;wektor strzalu (4b-poz_x, 4b-poz_y)	(0-odejmij, 1-brak przesuniecia, 2-dodaj)
-;--------------------------------------------------------------
-print_buf_x100:	;###wywoluje wiele razy, zeby opoznic prace programu ####
-	
-
-	push	cx
-
-	mov	cx, 20
-buf_x100:
-	call	print_buf
-	dec	cx
-	cmp	cx, 1
-	jns	buf_x100
-
-	pop	cx
-
-	ret
 ;--------------------------------------------------------------
 print_tanks:	;###rysuje wrogie czolgi ####
 	
@@ -1281,7 +1269,9 @@ if_wall:	;###sprawdza czy miedzy punktami jest sciana #ds-data seg, bx-offset st
 		
 		mov	ax, word ptr cs:[wall_dx + 2]
 		cmp	ax, word ptr cs:[wall_dy + 2]
-		js	wall_8
+		jns	wall_23
+		jmp	wall_8
+		wall_23:
 		
 			cmp	word ptr cs:[wall_dx], 1	;bx<ax
 			jz	wall_9
@@ -2401,7 +2391,7 @@ call_keyboard:	;###wlasne zdarzenie obslugi klawiatury #cs-code segemnt tej proc
 key_press:
 	
 	cmp	ax, word ptr cs:[last_code]	;sprawdz czy kod jest taki sam jak ostatnio
-	jz	key_done		;zeby nie wykonywac znow tych porownan
+	jz	key_done_alias		;zeby nie wykonywac znow tych porownan
 	
 	;-------------------
 	cmp	al, 17	;czy w?
@@ -2412,7 +2402,7 @@ key_press:
 	call	count_ah	;wylicza wartosc ah i ewentualnie zmienia cs:[bx]
 
 	mov	cs:[wsad], ah
-	jmp	key_done
+	jmp	key_done_alias
 not_w:
 
 	cmp	al, 31	;czy s?
@@ -2445,6 +2435,8 @@ not_a:
 	call	count_ah
 
 	mov	cs:[wsad + 3], ah
+	jmp	key_done
+key_done_alias:
 	jmp	key_done
 not_d:
 
